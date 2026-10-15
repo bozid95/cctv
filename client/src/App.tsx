@@ -97,7 +97,7 @@ export function App() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-zinc-950 font-sans antialiased text-zinc-100">
+    <div className="relative w-screen h-screen overflow-hidden bg-slate-50 font-sans antialiased text-slate-900">
       {/* Floating Island Header */}
       <FloatingHeader
         searchQuery={searchQuery}
@@ -114,9 +114,9 @@ export function App() {
       {/* Main Fullscreen Interactive Map */}
       <main className="w-full h-full">
         {isLoading ? (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-zinc-950/80 backdrop-blur-xs text-zinc-400 gap-2.5">
-            <RefreshCw className="w-6 h-6 animate-spin text-zinc-200" />
-            <p className="text-xs font-medium text-zinc-300">
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/85 backdrop-blur-xs text-slate-600 gap-2.5">
+            <RefreshCw className="w-6 h-6 animate-spin text-sky-500" />
+            <p className="text-xs font-medium text-slate-700">
               Menyiapkan peta kamera...
             </p>
           </div>

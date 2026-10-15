@@ -2,26 +2,26 @@
 
 @layer base {
   :root {
-    /* Shadcn Sky Dark Theme Tokens */
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 199 89% 48%; /* Sky 500 */
+    /* Google Maps Material Design Tokens */
+    --background: 0 0% 100%; /* #ffffff */
+    --foreground: 220 9% 14%; /* #202124 (Google Grey 900) */
+    --card: 0 0% 100%;
+    --card-foreground: 220 9% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 9% 14%;
+    --primary: 217 89% 51%; /* #1a73e8 (Google Blue) */
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 199 89% 48%; /* Sky 500 */
+    --secondary: 210 20% 98%; /* #f8f9fa (Google Grey 50) */
+    --secondary-foreground: 220 9% 14%;
+    --muted: 210 14% 95%; /* #f1f3f4 (Google Grey 100) */
+    --muted-foreground: 215 9% 39%; /* #5f6368 (Google Grey 700) */
+    --accent: 214 100% 95%; /* #e8f0fe (Google Light Blue chip) */
+    --accent-foreground: 217 89% 51%; /* #1a73e8 */
+    --destructive: 4 90% 58%; /* #ea4335 (Google Red) */
+    --destructive-foreground: 0 0% 100%;
+    --border: 216 12% 84%; /* #dadce0 (Google Grey 300) */
+    --input: 216 12% 84%;
+    --ring: 217 89% 51%; /* #1a73e8 */
     --radius: 0.75rem;
   }
 }
@@ -30,23 +30,27 @@
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background-color: #0b0f19 !important;
-  font-family: inherit;
+  background-color: #e8eaed !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
 }
 
-/* Custom Minimal Leaflet Popup */
+/* Google Maps Style Popup */
 .leaflet-popup-content-wrapper {
-  background: #0f172a !important;
-  color: #f8fafc !important;
-  border-radius: 14px !important;
+  background: #ffffff !important;
+  color: #202124 !important;
+  border-radius: 12px !important;
   padding: 4px !important;
-  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid #1e293b !important;
+  box-shadow:
+    0 2px 6px rgba(60, 64, 67, 0.15),
+    0 1px 2px rgba(60, 64, 67, 0.3) !important;
+  border: 1px solid #dadce0 !important;
 }
 
 .leaflet-popup-tip {
-  background: #0f172a !important;
-  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5) !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(60, 64, 67, 0.15) !important;
 }
 
 .leaflet-popup-content {
@@ -57,14 +61,14 @@
 .leaflet-container a.leaflet-popup-close-button {
   top: 8px !important;
   right: 8px !important;
-  color: #94a3b8 !important;
+  color: #5f6368 !important;
   width: 18px !important;
   height: 18px !important;
-  font-size: 14px !important;
+  font-size: 15px !important;
 }
 
 .leaflet-container a.leaflet-popup-close-button:hover {
-  color: #f8fafc !important;
+  color: #202124 !important;
 }
 
 /* Pin transition */

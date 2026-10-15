@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import { CctvCamera } from '@/types/cctv';
 import {
@@ -41,8 +41,10 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
   isOpen,
   onClose,
 }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // Use state callback ref so mounting in portal triggers immediate stream initialization
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+
   const [currentViewIndex, setCurrentViewIndex] = useState(0);
   const [useIframe, setUseIframe] = useState(false);
   const [useProxy, setUseProxy] = useState(true);
@@ -54,6 +56,14 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
   const rawStreamUrl = activeView ? activeView[1] : '';
   const embedUrl = activeView ? activeView[2] : '';
 
+  // Callback ref for <video> element
+  const videoRefCallback = useCallback((node: HTMLVideoElement | null) => {
+    if (node !== null) {
+      setVideoElement(node);
+    }
+  }, []);
+
+  // Reset state when camera changes
   useEffect(() => {
     setCurrentViewIndex(0);
     const shouldEmbed = isEmbedUrl(rawStreamUrl);
@@ -63,6 +73,7 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
     setIsLoading(true);
   }, [camera]);
 
+  // Handle embed URLs
   useEffect(() => {
     if (isEmbedUrl(rawStreamUrl)) {
       setUseIframe(true);
@@ -70,13 +81,12 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
     }
   }, [currentViewIndex, rawStreamUrl]);
 
+  // Stream initialization: triggers automatically when videoElement is ready
   useEffect(() => {
-    if (!isOpen || !camera || !rawStreamUrl || useIframe) return;
+    if (!isOpen || !camera || !rawStreamUrl || useIframe || !videoElement) return;
 
     let hls: Hls | null = null;
     let isCancelled = false;
-    const video = videoRef.current;
-    if (!video) return;
 
     setIsLoading(true);
     setErrorMessage(null);
@@ -108,7 +118,7 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
         }
       }
 
-      if (isCancelled) return;
+      if (isCancelled || !videoElement) return;
 
       const targetUrl = useProxy
         ? `/api/proxy/stream?url=${encodeURIComponent(finalStreamUrl)}`
@@ -122,15 +132,22 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
         });
 
         hls.loadSource(targetUrl);
-        hls.attachMedia(video);
+        hls.attachMedia(videoElement);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           if (isCancelled) return;
-          setIsLoading(false);
-          video.play().catch(() => {
-            video.muted = true;
-            video.play().catch(() => {});
+          videoElement.play().catch(() => {
+            videoElement.muted = true;
+            videoElement.play().catch(() => {});
           });
+        });
+
+        hls.on(Hls.Events.FRAG_BUFFERED, () => {
+          if (!isCancelled) setIsLoading(false);
+        });
+
+        hls.on(Hls.Events.FRAG_LOADED, () => {
+          if (!isCancelled) setIsLoading(false);
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -161,14 +178,16 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
             }
           }
         });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = targetUrl;
-        video.addEventListener('loadedmetadata', () => {
-          if (isCancelled) return;
-          setIsLoading(false);
-          video.play().catch(() => {});
+      } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        videoElement.src = targetUrl;
+        videoElement.addEventListener('loadeddata', () => {
+          if (!isCancelled) setIsLoading(false);
         });
-        video.addEventListener('error', () => {
+        videoElement.addEventListener('loadedmetadata', () => {
+          if (isCancelled) return;
+          videoElement.play().catch(() => {});
+        });
+        videoElement.addEventListener('error', () => {
           if (isCancelled) return;
           if (embedUrl) {
             setUseIframe(true);
@@ -188,7 +207,7 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
         hls.destroy();
       }
     };
-  }, [isOpen, camera, currentViewIndex, useProxy, useIframe, rawStreamUrl, embedUrl, viewTitle]);
+  }, [isOpen, camera, currentViewIndex, useProxy, useIframe, rawStreamUrl, embedUrl, viewTitle, videoElement]);
 
   const handleFullscreen = () => {
     if (containerRef.current) {
@@ -206,65 +225,65 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden bg-slate-950 border-slate-800 rounded-2xl shadow-2xl">
-        {/* Header */}
-        <div className="p-4 border-b border-slate-800/80 pr-12 flex flex-col gap-1">
+      <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white border-[#dadce0] text-[#202124] rounded-2xl shadow-2xl">
+        {/* Google Maps Style Header */}
+        <div className="p-4 border-b border-[#dadce0] pr-12 flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <Badge variant="sky" className="uppercase text-[9px] px-1.5 py-0 h-4 font-mono">
+            <Badge variant="outline" className="uppercase text-[10px] px-2 py-0.5 h-5 font-mono font-bold bg-[#f1f3f4] text-[#3c4043] border-[#dadce0]">
               {camera.src}
             </Badge>
-            <DialogTitle className="text-sm font-semibold text-slate-100 line-clamp-1">
+            <DialogTitle className="text-sm sm:text-base font-bold text-[#202124] line-clamp-1">
               {camera.name}
             </DialogTitle>
           </div>
           {camera.sub && (
-            <DialogDescription className="text-xs text-slate-400 line-clamp-1">
+            <DialogDescription className="text-xs text-[#5f6368] line-clamp-1">
               {camera.sub}
             </DialogDescription>
           )}
         </div>
 
-        {/* Video Player */}
+        {/* Video Player Container */}
         <div
           ref={containerRef}
-          className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden"
+          className="relative w-full aspect-video bg-[#000000] flex items-center justify-center overflow-hidden"
         >
           {/* Live Badge */}
-          <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[10px] font-medium text-slate-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
+            <span className="w-2 h-2 rounded-full bg-[#ea4335] animate-pulse"></span>
             LIVE
           </div>
 
           {/* Fullscreen Button */}
           <div className="absolute top-3 right-3 z-20">
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-7 w-7 rounded-lg bg-slate-950/80 backdrop-blur-md border-slate-800 text-slate-300 hover:text-sky-300 hover:border-sky-500/40"
+            <button
+              type="button"
+              className="h-8 w-8 rounded-full bg-black/60 hover:bg-black/90 backdrop-blur-md border border-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
               onClick={handleFullscreen}
               title="Fullscreen"
             >
-              <Maximize2 className="w-3 h-3" />
-            </Button>
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          {/* Loading */}
+          {/* Instant Disappearing Loading Overlay */}
           {isLoading && !errorMessage && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/90 text-slate-400 gap-2">
-              <RefreshCw className="w-5 h-5 animate-spin text-sky-400" />
-              <p className="text-xs text-slate-300">Memuat tayangan...</p>
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70 backdrop-blur-[2px] text-white gap-2 transition-opacity duration-150 pointer-events-none">
+              <RefreshCw className="w-6 h-6 animate-spin text-[#1a73e8]" />
+              <p className="text-xs text-[#dadce0] font-medium">Menghubungkan ke siaran...</p>
             </div>
           )}
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/95 text-slate-400 gap-3 p-6 text-center">
-              <AlertCircle className="w-8 h-8 text-amber-500/80" />
-              <div className="text-xs font-medium text-slate-300">{errorMessage}</div>
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95 text-[#202124] gap-3 p-6 text-center">
+              <AlertCircle className="w-9 h-9 text-[#ea4335]" />
+              <div className="text-xs font-semibold text-[#202124] max-w-sm">{errorMessage}</div>
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="outline"
+                  className="rounded-full border-[#dadce0] text-[#3c4043] hover:bg-[#f1f3f4]"
                   onClick={() => {
                     setErrorMessage(null);
                     setIsLoading(true);
@@ -275,8 +294,7 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
                 {currentEmbedSource && (
                   <Button
                     size="sm"
-                    variant="default"
-                    className="bg-sky-500 hover:bg-sky-600 text-white"
+                    className="bg-[#1a73e8] hover:bg-[#174ea6] text-white rounded-full font-medium"
                     onClick={() => {
                       setUseIframe(true);
                       setErrorMessage(null);
@@ -301,18 +319,26 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
             />
           ) : (
             <video
-              ref={videoRef}
+              ref={videoRefCallback}
               className="w-full h-full object-contain"
               playsInline
               autoPlay
               muted
               controls
+              onPlaying={() => setIsLoading(false)}
+              onPlay={() => setIsLoading(false)}
+              onCanPlay={() => setIsLoading(false)}
+              onTimeUpdate={() => {
+                if (videoElement && videoElement.currentTime > 0) {
+                  setIsLoading(false);
+                }
+              }}
             />
           )}
         </div>
 
         {/* Footer: Multi-view angle tabs & external links */}
-        <div className="p-3 bg-slate-950 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+        <div className="p-3 bg-white border-t border-[#dadce0] flex flex-wrap items-center justify-between gap-2">
           {camera.views && camera.views.length > 1 ? (
             <Tabs
               value={String(currentViewIndex)}
@@ -323,30 +349,30 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
                 setUseIframe(shouldEmbed);
               }}
             >
-              <TabsList className="h-7 bg-slate-900 border-slate-800">
+              <TabsList className="h-8 bg-[#f1f3f4] border-none rounded-full p-1">
                 {camera.views.map((v, idx) => (
                   <TabsTrigger
                     key={idx}
                     value={String(idx)}
-                    className="text-[11px] px-2.5 py-0.5 h-6 data-[state=active]:bg-sky-500 data-[state=active]:text-white"
+                    className="text-[11px] px-3 py-1 h-6 rounded-full data-[state=active]:bg-[#1a73e8] data-[state=active]:text-white font-medium"
                   >
-                    {v[0] || `Sudut ${idx + 1}`}
+                    {v[0] || `Kamera ${idx + 1}`}
                   </TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
           ) : (
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-[#5f6368] font-medium">
               {viewTitle}
             </span>
           )}
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-3 ml-auto">
             {currentEmbedSource && !isEmbedUrl(rawStreamUrl) && (
               <button
                 type="button"
                 onClick={() => setUseIframe(!useIframe)}
-                className="text-xs text-slate-400 hover:text-sky-300 transition-colors cursor-pointer"
+                className="text-xs text-[#1a73e8] hover:underline font-medium cursor-pointer"
               >
                 {useIframe ? 'Mode HLS' : 'Mode Portal'}
               </button>
@@ -356,10 +382,10 @@ export const CctvPlayer: React.FC<CctvPlayerProps> = ({
                 href={embedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-xs text-slate-400 hover:text-sky-400 transition-colors gap-1"
+                className="inline-flex items-center text-xs text-[#1a73e8] hover:underline font-medium gap-1"
               >
-                <span>Situs Resmi</span>
-                <ExternalLink className="w-3 h-3" />
+                <span>Buka Sumber</span>
+                <ExternalLink className="w-3.5 h-3.5" />
               </a>
             )}
           </div>
