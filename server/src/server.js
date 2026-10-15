@@ -37,6 +37,7 @@ if (fs.existsSync(clientDist)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`[CCTV Server] Running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`[CCTV Server] Running on http://0.0.0.0:${PORT}`);
 });
+
