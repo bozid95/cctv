@@ -1,0 +1,31 @@
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const cctvRoutes = require("./routes/cctv.routes");
+const proxyRoutes = require("./routes/proxy.routes");
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Enable CORS for frontend
+app.use(cors({ origin: "*" }));
+app.use(express.json());
+
+// API Routes
+app.use("/api/cctv", cctvRoutes);
+app.use("/api/proxy", proxyRoutes);
+
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    service: "CCTV Live Server",
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`[CCTV Server] Running on http://localhost:${PORT}`);
+});
