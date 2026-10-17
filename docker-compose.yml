@@ -5,8 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - VITE_MAPTILER_API_KEY=${VITE_MAPTILER_API_KEY:-UZoRbGNmqJsmrvrfNZC3}
     container_name: web-cctv
     restart: unless-stopped
     ports:

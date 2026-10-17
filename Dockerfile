@@ -4,10 +4,6 @@
 FROM node:22-alpine AS client-builder
 WORKDIR /app/client
 
-# Pass MapTiler API key during build
-ARG VITE_MAPTILER_API_KEY=UZoRbGNmqJsmrvrfNZC3
-ENV VITE_MAPTILER_API_KEY=$VITE_MAPTILER_API_KEY
-
 COPY client/package*.json ./
 RUN npm ci
 

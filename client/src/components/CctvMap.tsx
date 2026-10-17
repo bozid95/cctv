@@ -124,8 +124,6 @@ export const CctvMap: React.FC<CctvMapProps> = ({
   selectedCamera,
 }) => {
   const defaultCenter: [number, number] = [-6.2088, 106.8456]; // Jakarta Center
-  const mapTilerKey =
-    import.meta.env.VITE_MAPTILER_API_KEY || "UZoRbGNmqJsmrvrfNZC3";
 
   // Cache marker icons by source
   const icons = useMemo(() => {
@@ -147,13 +145,11 @@ export const CctvMap: React.FC<CctvMapProps> = ({
         className="w-full h-full z-0"
         zoomControl={false}
       >
-        {/* MapTiler Streets v2 with user API key */}
+        {/* OpenStreetMap Standard (100% Free & Open Source) */}
         <TileLayer
-          attribution='&copy; <a href="https://www.maptiler.com/">MapTiler</a>'
-          url={`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${mapTilerKey}`}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
-          tileSize={512}
-          zoomOffset={-1}
         />
 
         {selectedCamera && (
